@@ -15,7 +15,8 @@ int main(int argc,char **argv){
     // 関数登録
     glutDisplayFunc(Display);
     glutReshapeFunc(Reshape);
-    //glutMouseFunc(Mouse);
+    glutMouseFunc(Mouse);
+    glutPassiveMotionFunc(PassiveMotion);
     glutTimerFunc(500,Timer,0);
     //  テクスチャのアルファチャネルを有効にする設定
     glEnable(GL_BLEND);

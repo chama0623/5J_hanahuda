@@ -122,9 +122,10 @@ void shuffle(void){
         deck[rnd1] = deck[rnd2];
         deck[rnd2]=tmp;
     }
+    /*
     for(i=0;i<CARD_NUM;i++){
         printf("%d,%d\n",i,deck[i]);
-    }
+    }*/
 }
 
 // 山札からカードを出す処理
@@ -149,6 +150,7 @@ void arrangeCard(void){
         peercard[i] = popDeck();
     }
 
+
     printf("place_num = %d\n",place_num);
     printf("mycard_num = %d\n",mycard_num);
     printf("peercard_num = %d\n",peercard_num);
@@ -171,33 +173,210 @@ void game_init(int soc,int argrole){
     arrangeCard(); // 場, 手札にカードを配る
 }
 
+// カードがとれるか判定する処理
+int istake(int card1,int card2){
+    if(cards[card1].month==cards[card2].month){
+        return 1;
+    }
+    return 0;
+}
+
+void Mouse(int b,int s,int x,int y){
+    if(b==GLUT_LEFT_BUTTON){
+        if(s==GLUT_UP){
+            beforeclickedCard = clickedCard;
+            clickedCard = calWhichMycard(x,y);
+            if(clickedCard==-1){
+                clickedPlaceCard = calWhichPlacecard(x,y);
+                clickedCard = beforeclickedCard;
+            }
+            // カードがとれないとき
+            if((clickedCard!=-1)&&(clickedPlaceCard!=-1)){
+                if(cards[mycard[clickedCard]].month != cards[place[clickedPlaceCard]].month){
+                    clickedPlaceCard=-1;
+                }else{
+                    turn=2;
+                }
+            }
+        }
+    }
+    //printf("clickedCard = %d\n",clickedCard);
+}
+
+// 場札のどのカードの上にマウスがあるか計算する処理
+int calWhichPlacecard(int x,int y){
+    int index=-1;
+    // 上段の判定
+    if((220<y)&&(y<300)){
+        if((200<=x)&&(x<=400)){
+            index=x-200;
+            index/=50;
+            if(place_num<4){
+                if(index>=place_num){
+                    index=-1;
+                }
+            }
+        }
+        return index;
+    }
+    // 下段の判定
+    if(place_num>4){
+        if((300<y)&&(y<380)){
+            if((200<=x)&&(x<=400)){
+                index=x-200;
+                index/=50;
+                index+=4;
+                if(index>=place_num){
+                    index=-1;
+                }        
+            }
+        }
+    }
+    return index;
+}
+
+
+// 手札のどのカードの上にマウスがあるか計算する処理
+// -1:手札の上にマウスがない
+// 0～7:手札の番号
+int calWhichMycard(int x,int y){
+    int index;
+    if(y<410||y>490){
+        index=-1;
+    }else if((100<=x)&&(x<=500)){
+        index=x-100;
+        index/=50;
+        if(index>=mycard_num){
+            index=-1;
+        }
+    }else{
+        index=-1;
+    }
+    return index;
+}
+
+// 指定された座標をカードの大きさで囲む
+void surroundCard(int x,int y,int R,int G,int B){
+    glLineWidth(2.0);
+    glColor3ub(R,G,B);
+    glBegin(GL_LINE_STRIP);
+    glVertex2i(x-1,y-1);
+    glVertex2i(x-1,y+80);
+    glVertex2i(x+48,y+80);
+    glVertex2i(x+48,y-1);
+    glVertex2i(x-1,y-1);
+    glEnd();
+    glColor3ub(255,255,255);
+    glLineWidth(1.0);
+}
+
+void PassiveMotion(int x,int y){
+    //printf("passive(%d,%d)\n",x,y);
+    selectedCard = calWhichMycard(x,y);
+    selectedPlaceCard = calWhichPlacecard(x,y);
+}
+
 void Display(void){
     int i;
-    int x=50;
-    int y=50;
+    int x,y;
     // 描画クリア
     glClear(GL_COLOR_BUFFER_BIT);
+    
     // 場のカードを描画
+    x=200;
+    y=220;
+
+    glBegin(GL_LINES);
+    glVertex2i(300,0);
+    glVertex2i(300,600);
+    glVertex2i(0,300);
+    glVertex2i(600,300);
+    glEnd();
+
     for(i=0;i<place_num;i++){
         PutSprite(cardimg[place[i]],x,y,&cardinfo[place[i]],0.5);
-        x+=CARD_WIDTH/2;
+        x+=50;
         if(i!=0 && i%4==3){
-            y+=CARD_HEIGHT/3;
-            x=50;
+            y+=80;
+            x=200;
         }
     }
 
-    x=50;
-    y=300;
+    // 山札を描画
+    PutSprite(cardimg[ALL_CARD-1],500,260,&cardinfo[ALL_CARD-1],0.5);
+
+    // 自分の手札を描画
+    x=100;
+    y=410;
     for(i=0;i<mycard_num;i++){
         if(role==0){
             PutSprite(cardimg[mycard[i]],x,y,&cardinfo[mycard[i]],0.5);
         }else{
             PutSprite(cardimg[peercard[i]],x,y,&cardinfo[peercard[i]],0.5);
         }
-        x+=CARD_WIDTH/2;
+        x+=50;
     }
 
+    // 相手の手札を裏面にして描画
+    x=100;
+    y=110;
+    for(i=0;i<peercard_num;i++){
+        PutSprite(cardimg[ALL_CARD-1],x,y,&cardinfo[ALL_CARD-1],0.5);
+        x+=50;
+    }
+
+    //カード選択
+    if((turn==0)&&(role==0)){
+        if(selectedCard!=-1){
+            surroundCard(100+selectedCard*50,410,255,0,0);
+        }
+        if(clickedCard!=-1){
+            surroundCard(100+clickedCard*50,410,0,0,255);
+        }
+        if(selectedPlaceCard!=-1){
+            //下段
+            if(selectedPlaceCard>=4){
+                surroundCard(200+(selectedPlaceCard-4)*50,300,255,0,0);
+            }else{ // 上段
+                surroundCard(200+selectedPlaceCard*50,220,255,0,0);
+            }
+        }
+        if(clickedPlaceCard!=-1){
+            //下段
+            if(clickedPlaceCard>=4){
+                surroundCard(200+(clickedPlaceCard-4)*50,300,0,0,255);
+            }else{ // 上段
+                surroundCard(200+clickedPlaceCard*50,220,0,0,255);
+            }            
+        }
+    }else if((turn==1)&&(role==1)){
+        if(selectedCard!=-1){
+            surroundCard(100+selectedCard*50,410,255,0,0);
+        }
+        if(clickedCard!=-1){
+            surroundCard(100+clickedCard*50,410,0,0,255);
+        }
+        if(selectedPlaceCard!=-1){
+            //下段
+            if(selectedPlaceCard>=4){
+                surroundCard(200+(selectedPlaceCard-4)*50,300,255,0,0);
+            }else{ // 上段
+                surroundCard(200+selectedPlaceCard*50,220,255,0,0);
+            }
+        }
+        if(clickedPlaceCard!=-1){
+            //下段
+            if(clickedPlaceCard>=4){
+                surroundCard(200+(clickedPlaceCard-4)*50,300,0,0,255);
+            }else{ // 上段
+                surroundCard(200+clickedPlaceCard*50,220,0,0,255);
+            }            
+        }
+    }
+
+    if(turn==2){
+        printf("aaa\n");
+    }
     // 描画の反映
     glFlush();
 }

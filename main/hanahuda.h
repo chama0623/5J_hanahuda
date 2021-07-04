@@ -7,7 +7,7 @@
 #define HOSTNAME_LENGTH 64
 
 #define WINDOW_W 600
-#define WINDOW_H 450
+#define WINDOW_H 600
 #define CARD_WIDTH 128
 #define CARD_HEIGHT 256
 #define CARD_NUM 48 // 12*4
@@ -47,7 +47,12 @@ static int mycard[INIT_PLACE]; //親のカード
 static int peercard_num=INIT_PLACE; //子のカードの数
 static int peercard[INIT_PLACE]; //子のカード 
 static int role; // 親(0)か子(1)か
-
+static int turn=0; // 誰のターンか
+static int selectedCard=-1; // 選択中の手札のカードの番号を保持
+static int beforeclickedCard=-1; // 1つ前にクリックした手札のカードを保持
+static int clickedCard=-1; // クリックした手札のカードを保持 
+static int selectedPlaceCard=-1; // 選択中の場札のカードの番号を保持
+static int clickedPlaceCard=-1; // クリックした場札のカードの番号を保持
 static int hanahuda_soc;
 
 struct cardstruct{
@@ -71,3 +76,8 @@ int popDeck(void);
 void card_status(void);
 int pushPlace(int);
 void arrangeCard(void);
+void Mouse(int,int,int,int);
+void PassiveMotion(int,int);
+int calWhichPlacecard(int,int);
+int calWhichMycard(int,int);
+void surroundCard(int,int,int,int,int);

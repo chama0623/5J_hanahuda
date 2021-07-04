@@ -99,7 +99,7 @@ void card_init(void){
             cards[cnt].month=i;
             cards[cnt].num=j+1;
             cards[cnt].rank=cardrank[i-1][j];
-            cards[cnt].have=0;
+            cards[cnt].have=-1;
             cnt++;
         }
     }
@@ -138,6 +138,18 @@ int popDeck(void){
 // 場にカードを入れる処理
 int pushPlace(int c){
     place[place_num++]=c;
+}
+
+// 場からカードを出す処理
+int popPlace(int index){
+    int i;
+    int tmp=place[index];
+    for(i=index+1;i<place_num;i++){
+        place[i-1]=place[i];
+    }
+    place[i]=-1;
+    place_num--;
+    return tmp;
 }
 
 // 場と手札にカードを配る処理
@@ -181,26 +193,58 @@ int istake(int card1,int card2){
     return 0;
 }
 
-void Mouse(int b,int s,int x,int y){
-    if(b==GLUT_LEFT_BUTTON){
-        if(s==GLUT_UP){
-            beforeclickedCard = clickedCard;
-            clickedCard = calWhichMycard(x,y);
-            if(clickedCard==-1){
-                clickedPlaceCard = calWhichPlacecard(x,y);
-                clickedCard = beforeclickedCard;
+// 選択されている手札のカードで取れる場のカードがあるか
+// ある:1
+// ない:0
+// index:自分のカードのmycardにおけるインデックス
+int isGetCard(int index){
+    int i;
+    int flag=0;
+    for(i=0;i<place_num;i++){
+        if(role==0){
+            if(cards[place[i]].month==cards[mycard[index]].month){
+                flag=1;
+                break;
             }
-            // カードがとれないとき
-            if((clickedCard!=-1)&&(clickedPlaceCard!=-1)){
-                if(cards[mycard[clickedCard]].month != cards[place[clickedPlaceCard]].month){
-                    clickedPlaceCard=-1;
-                }else{
-                    turn=2;
-                }
+        }else{
+            if(cards[place[i]].month==cards[peercard[index]].month){
+                flag=1;
+                break;
             }
         }
     }
-    //printf("clickedCard = %d\n",clickedCard);
+    return flag;
+}
+
+void Mouse(int b,int s,int x,int y){
+    int tmpclick,tmpclickplace;
+    if(turn==0){
+        if(b==GLUT_LEFT_BUTTON){
+            if(s==GLUT_UP){
+            tmpclick = calWhichMycard(x,y);
+            tmpclickplace = calWhichPlacecard(x,y);
+            // 手札選択更新
+            if(tmpclick!=-1){
+                clickedCard = tmpclick;
+            }
+            // 選択したカードでとれる場札が無ければ
+            if(isGetCard(clickedCard)==0){
+                status=2;
+            }else{
+                if(tmpclickplace!=-1){
+                    clickedPlaceCard = tmpclickplace;
+                }
+                // 選択したカードでペアが作れなければ
+                if(cards[mycard[clickedCard]].month != cards[place[clickedPlaceCard]].month){
+                    clickedPlaceCard=-1;
+                }else{
+                    status=1;
+                }
+            }            
+            printf("%d,%d\n",clickedCard,clickedPlaceCard);
+        }
+    }
+    }
 }
 
 // 場札のどのカードの上にマウスがあるか計算する処理
@@ -208,10 +252,10 @@ int calWhichPlacecard(int x,int y){
     int index=-1;
     // 上段の判定
     if((220<y)&&(y<300)){
-        if((200<=x)&&(x<=400)){
+        if((200<=x)&&(x<=500)){
             index=x-200;
             index/=50;
-            if(place_num<4){
+            if(place_num<6){
                 if(index>=place_num){
                     index=-1;
                 }
@@ -220,12 +264,12 @@ int calWhichPlacecard(int x,int y){
         return index;
     }
     // 下段の判定
-    if(place_num>4){
+    if(place_num>6){
         if((300<y)&&(y<380)){
-            if((200<=x)&&(x<=400)){
+            if((200<=x)&&(x<=500)){
                 index=x-200;
                 index/=50;
-                index+=4;
+                index+=6;
                 if(index>=place_num){
                     index=-1;
                 }        
@@ -276,12 +320,9 @@ void PassiveMotion(int x,int y){
     selectedPlaceCard = calWhichPlacecard(x,y);
 }
 
-void Display(void){
+void PaintCards(void){
     int i;
     int x,y;
-    // 描画クリア
-    glClear(GL_COLOR_BUFFER_BIT);
-    
     // 場のカードを描画
     x=200;
     y=220;
@@ -293,17 +334,18 @@ void Display(void){
     glVertex2i(600,300);
     glEnd();
 
+    // 場を描画
     for(i=0;i<place_num;i++){
         PutSprite(cardimg[place[i]],x,y,&cardinfo[place[i]],0.5);
         x+=50;
-        if(i!=0 && i%4==3){
+        if(i!=0 && i%6==5){
             y+=80;
             x=200;
         }
     }
 
     // 山札を描画
-    PutSprite(cardimg[ALL_CARD-1],500,260,&cardinfo[ALL_CARD-1],0.5);
+    PutSprite(cardimg[ALL_CARD-1],100,260,&cardinfo[ALL_CARD-1],0.5);
 
     // 自分の手札を描画
     x=100;
@@ -325,58 +367,124 @@ void Display(void){
         x+=50;
     }
 
-    //カード選択
-    if((turn==0)&&(role==0)){
-        if(selectedCard!=-1){
-            surroundCard(100+selectedCard*50,410,255,0,0);
-        }
-        if(clickedCard!=-1){
-            surroundCard(100+clickedCard*50,410,0,0,255);
-        }
-        if(selectedPlaceCard!=-1){
-            //下段
-            if(selectedPlaceCard>=4){
-                surroundCard(200+(selectedPlaceCard-4)*50,300,255,0,0);
-            }else{ // 上段
-                surroundCard(200+selectedPlaceCard*50,220,255,0,0);
+    if(status==0){
+        //カード選択
+        if(turn==0){
+            if(role==0){
+                if(selectedCard!=-1){
+                    surroundCard(100+selectedCard*50,410,255,0,0);
+                }
+                if(clickedCard!=-1){
+                    surroundCard(100+clickedCard*50,410,0,0,255);
+                }
+                if(selectedPlaceCard!=-1){
+                    //下段
+                    if(selectedPlaceCard>=6){
+                        surroundCard(200+(selectedPlaceCard-6)*50,300,255,0,0);
+                    }else{ // 上段
+                        surroundCard(200+selectedPlaceCard*50,220,255,0,0);
+                    }
+                }
+                if(clickedPlaceCard!=-1){
+                    //下段
+                    if(clickedPlaceCard>6){
+                        surroundCard(200+(clickedPlaceCard-6)*50,300,0,0,255);
+                    }else{ // 上段
+                        surroundCard(200+clickedPlaceCard*50,220,0,0,255);
+                    }            
+                }
             }
-        }
-        if(clickedPlaceCard!=-1){
-            //下段
-            if(clickedPlaceCard>=4){
-                surroundCard(200+(clickedPlaceCard-4)*50,300,0,0,255);
-            }else{ // 上段
-                surroundCard(200+clickedPlaceCard*50,220,0,0,255);
-            }            
-        }
-    }else if((turn==1)&&(role==1)){
-        if(selectedCard!=-1){
-            surroundCard(100+selectedCard*50,410,255,0,0);
-        }
-        if(clickedCard!=-1){
-            surroundCard(100+clickedCard*50,410,0,0,255);
-        }
-        if(selectedPlaceCard!=-1){
-            //下段
-            if(selectedPlaceCard>=4){
-                surroundCard(200+(selectedPlaceCard-4)*50,300,255,0,0);
-            }else{ // 上段
-                surroundCard(200+selectedPlaceCard*50,220,255,0,0);
+        }else{
+            if(role==1){
+                if(selectedCard!=-1){
+                    surroundCard(100+selectedCard*50,410,255,0,0);
+                }
+                if(clickedCard!=-1){
+                    surroundCard(100+clickedCard*50,410,0,0,255);
+                }
+                if(selectedPlaceCard!=-1){
+                    //下段
+                    if(selectedPlaceCard>=6){
+                        surroundCard(200+(selectedPlaceCard-6)*50,300,255,0,0);
+                    }else{ // 上段
+                        surroundCard(200+selectedPlaceCard*50,220,255,0,0);
+                    }
+                }
+                if(clickedPlaceCard!=-1){
+                    //下段
+                    if(clickedPlaceCard>=6){
+                        surroundCard(200+(clickedPlaceCard-6)*50,300,0,0,255);
+                    }else{ // 上段
+                        surroundCard(200+clickedPlaceCard*50,220,0,0,255);
+                    }            
+                }
             }
-        }
-        if(clickedPlaceCard!=-1){
-            //下段
-            if(clickedPlaceCard>=4){
-                surroundCard(200+(clickedPlaceCard-4)*50,300,0,0,255);
-            }else{ // 上段
-                surroundCard(200+clickedPlaceCard*50,220,0,0,255);
-            }            
         }
     }
+}
 
-    if(turn==2){
+void Display(void){
+    int r,i;
+    int data[10];
+    // 描画クリア
+    glClear(GL_COLOR_BUFFER_BIT);
+    // カードを描画
+    PaintCards();
+    if(status==0){
+        if(turn==0){
+            if(role==0){
+                data[0]=turn;
+                write(hanahuda_soc,data,10);
+            }
+            if(role==1){
+                read(hanahuda_soc,data,10);
+                turn=data[0];
+            }
+            //printf("%d,%d\n",turn,role);
+        }else{
+        if(turn==1){
+            if(role==1){
+                data[0]=turn;
+                write(hanahuda_soc,data,10);
+            }
+            if(role==0){
+                read(hanahuda_soc,data,10);
+                turn=data[0];
+            }
+            //printf("%d,%d\n",turn,role);        
+        }
+    }
+    }if(status==1){
+        // カードの取得処理
+        cards[mycard[clickedCard]].have=turn;
+        cards[place[clickedPlaceCard]].have=turn;
+        r=popPlace(clickedPlaceCard);
+        printf("%d\n",r);
+        for(i=0;i<INIT_PLACE;i++){
+            printf("%d | %d | %d | %d\n",i,place[i],mycard[i],peercard[i]);
+        }
+
+        // 役判定
+
+        // 山札に1枚加える
+
+        // 山札に加えた札で取れる札があれば取得
+
+        // 役判定
+
+        // turn切り替え
+        if(turn==0){
+            turn=1;
+        }else{
+            turn=0;
+        }
+        data[0] = turn;
+        write(hanahuda_soc,data,10);
+        status=0;
+    }else if(status==2){
         printf("aaa\n");
     }
     // 描画の反映
+
     glFlush();
 }

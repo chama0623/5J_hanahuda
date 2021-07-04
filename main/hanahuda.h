@@ -49,11 +49,15 @@ static int peercard[INIT_PLACE]; //子のカード
 static int role; // 親(0)か子(1)か
 static int turn=0; // 誰のターンか
 static int selectedCard=-1; // 選択中の手札のカードの番号を保持
-static int beforeclickedCard=-1; // 1つ前にクリックした手札のカードを保持
 static int clickedCard=-1; // クリックした手札のカードを保持 
 static int selectedPlaceCard=-1; // 選択中の場札のカードの番号を保持
 static int clickedPlaceCard=-1; // クリックした場札のカードの番号を保持
+static int mygetcard_num=0; // 取得したカードの枚数
+static int mygetcard[CARD_NUM/2]; // 取得したカードの番号の配列
+static int peergetcard_num=0; // ペアが取得したカードの枚数
+static int peergetcard[CARD_NUM/2]; // ペアが取得したカードの番号の配列
 static int hanahuda_soc;
+static int status=0;
 
 struct cardstruct{
     int month; // 1-12
@@ -65,6 +69,7 @@ struct cardstruct{
 typedef struct cardstruct card;
 static card cards[CARD_NUM];
 void Display(void);
+void PaintCards(void);
 void Reshape(int,int);
 void Timer(int);
 void PutSprite(int,int,int,pngInfo *,double);
@@ -75,6 +80,7 @@ void shuffle(void);
 int popDeck(void);
 void card_status(void);
 int pushPlace(int);
+int popPlace(int);
 void arrangeCard(void);
 void Mouse(int,int,int,int);
 void PassiveMotion(int,int);

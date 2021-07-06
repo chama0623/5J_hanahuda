@@ -81,6 +81,7 @@ int popDeck(void);
 void card_status(void);
 int pushPlace(int);
 int popPlace(int);
+int popHandCard(int);
 void arrangeCard(void);
 void Mouse(int,int,int,int);
 void PassiveMotion(int,int);

@@ -143,13 +143,26 @@ int pushPlace(int c){
 // 場からカードを出す処理
 int popPlace(int index){
     int i;
+    printf("index:%d\n",index);
     int tmp=place[index];
     for(i=index+1;i<place_num;i++){
         place[i-1]=place[i];
     }
-    place[i]=-1;
+    place[i-1]=-1;
     place_num--;
     return tmp;
+}
+
+// 手札からカードを出す処理
+int popHandCard(int index){
+    int i;
+    int tmp=mycard[index];
+    for(i=index+1;i<mycard_num;i++){
+        mycard[i-1]=mycard[i];
+    }
+    mycard[i-1]=-1;
+    mycard_num--;
+    return tmp;    
 }
 
 // 場と手札にカードを配る処理
@@ -241,7 +254,33 @@ void Mouse(int b,int s,int x,int y){
                     status=1;
                 }
             }            
-            printf("%d,%d\n",clickedCard,clickedPlaceCard);
+            //printf("%d,%d\n",clickedCard,clickedPlaceCard);
+        }
+    }
+    }else{
+        if(b==GLUT_LEFT_BUTTON){
+            if(s==GLUT_UP){
+            tmpclick = calWhichMycard(x,y);
+            tmpclickplace = calWhichPlacecard(x,y);
+            // 手札選択更新
+            if(tmpclick!=-1){
+                clickedCard = tmpclick;
+            }
+            // 選択したカードでとれる場札が無ければ
+            if(isGetCard(clickedCard)==0){
+                status=2;
+            }else{
+                if(tmpclickplace!=-1){
+                    clickedPlaceCard = tmpclickplace;
+                }
+                // 選択したカードでペアが作れなければ
+                if(cards[peercard[clickedCard]].month != cards[place[clickedPlaceCard]].month){
+                    clickedPlaceCard=-1;
+                }else{
+                    status=1;
+                }
+            }            
+            //printf("%d,%d\n",clickedCard,clickedPlaceCard);
         }
     }
     }
@@ -326,7 +365,8 @@ void PaintCards(void){
     // 場のカードを描画
     x=200;
     y=220;
-
+    //printf("%d,%d\n",selectedCard,clickedCard);
+    //printf("Place : %d,%d\n",selectedPlaceCard,clickedPlaceCard);
     glBegin(GL_LINES);
     glVertex2i(300,0);
     glVertex2i(300,600);
@@ -423,9 +463,20 @@ void PaintCards(void){
     }
 }
 
+void pushGetCard(int index){
+    if(role==0){
+        mygetcard[mygetcard_num]=index;
+        mygetcard_num++;
+    }else{
+        peergetcard[peergetcard_num]=index;
+        peergetcard_num++;
+    }
+}
+
 void Display(void){
     int r,i;
-    int data[10];
+    int data[10]
+    //0:status 1:相手の取り札(山札),2:相手の取り札(場札)1,3:相手の取り札(場札)2,4:相手の取り札(手札):
     // 描画クリア
     glClear(GL_COLOR_BUFFER_BIT);
     // カードを描画
@@ -456,17 +507,23 @@ void Display(void){
     }
     }if(status==1){
         // カードの取得処理
-        cards[mycard[clickedCard]].have=turn;
-        cards[place[clickedPlaceCard]].have=turn;
+        printf("status=1\n");
+        printf("%d,%d\n",clickedCard,clickedPlaceCard);
         r=popPlace(clickedPlaceCard);
-        printf("%d\n",r);
+        data[3]=r;
+        pushGetCard(r);
+        r=popHandCard(clickedCard);
+        data[4]=r;
+        pushGetCard(r);
         for(i=0;i<INIT_PLACE;i++){
-            printf("%d | %d | %d | %d\n",i,place[i],mycard[i],peercard[i]);
+            printf("%d | %d | %d | %d | %d | %d\n",i,place[i],mycard[i],peercard[i],mygetcard[i],peergetcard[i]);
         }
 
         // 役判定
 
-        // 山札に1枚加える
+        // 山札から1枚出す
+        r=popDeck();
+        if()
 
         // 山札に加えた札で取れる札があれば取得
 
@@ -480,11 +537,15 @@ void Display(void){
         }
         data[0] = turn;
         write(hanahuda_soc,data,10);
+        selectedCard=-1;
+        clickedCard=-1;
+        selectedPlaceCard=-1;
+        clickedPlaceCard=-1;
         status=0;
     }else if(status==2){
         printf("aaa\n");
     }
-    // 描画の反映
 
+    // 描画の反映
     glFlush();
 }

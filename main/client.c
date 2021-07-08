@@ -12,7 +12,7 @@ int main(int argc,char **argv){
     // 初期Windowサイズ設定
     glutInitWindowSize(WINDOW_W,WINDOW_H);
     // 新規Window作成
-    glutCreateWindow("test");
+    glutCreateWindow("hanahuda_client");
     // 関数登録
     glutDisplayFunc(Display);
     glutReshapeFunc(Reshape);
@@ -25,7 +25,7 @@ int main(int argc,char **argv){
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
     // display初期化
     glutInitDisplayMode(GLUT_RGBA);
-    glClearColor(0.0,1.0,0.0,1.0);
+    glClearColor(0.28,0.48,0.32,1.0);
     //サーバーのホスト名の入力
     printf("Input server's hostname: ");
     fgets(hostname,HOSTNAME_LENGTH,stdin);

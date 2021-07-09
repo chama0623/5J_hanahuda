@@ -5,9 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-// windowサイズが変更されたときの処理
 void Reshape(int w,int h){
-    //printf("ウィンドウの幅と高さ=%d x %d\n",w,h);
     glViewport(0,0,w,h);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -76,52 +74,16 @@ void readImg(void){
     // 裏返しのカード(back)を読み込み
     sprintf(fname,".\\card\\back.png");
     cardimg[cnt] = pngBind(fname, PNG_NOMIPMAP, PNG_ALPHA, 
-        &cardinfo[cnt], GL_CLAMP, GL_NEAREST, GL_NEAREST);    
+        &cardinfo[cnt], GL_CLAMP, GL_NEAREST, GL_NEAREST);
+
+    sprintf(fname,".\\koikoi.png");
+    koikoiimg = pngBind(fname, PNG_NOMIPMAP, PNG_ALPHA, 
+        &koikoiinfo, GL_CLAMP, GL_NEAREST, GL_NEAREST);        
 }
 
-// カードの情報をカード構造体に格納
-void card_init(void){
-    int i,j;
-    int cnt=0;
-    // すべてのカードについて
-    for(i=1;i<=MONTH;i++){
-        for(j=0;j<MONTH_CARD;j++){
-            cards[cnt].month=i;
-            cards[cnt].num=j+1;
-            cards[cnt].rank=cardrank[i-1][j];
-            cnt++;
-        }
-    }
-    for(i=0;i<CARD_NUM;i++){
-        printf("%d,%d,%d,%d\n",i,cards[i].month,cards[i].num,cards[i].rank);
-    }
-}
-
-// カードをシャッフル
-void shuffle(void){
-    srand((unsigned) time(NULL));
-    int i,rnd1,rnd2,tmp;
-    // 全てのカードを山札に格納
-    for(i=0;i<CARD_NUM;i++){
-        deck[i]=i;
-    }
-
-    for(i=0;i<SHUFFLE_TIME;i++){
-        rnd1 = rand()%CARD_NUM;
-        rnd2 = rand()%CARD_NUM;
-        tmp = deck[rnd1];
-        deck[rnd1] = deck[rnd2];
-        deck[rnd2]=tmp;
-    }
-}
-
-// ゲーム初期化
-// role 0:親,1:子
-void game_init(int soc,int argrole){
+// 配列の初期化
+void array_init(void){
     int i;
-    hanahuda_soc = soc;
-    role=argrole;
-    
     // 配列の初期化
     for(i=0;i<INIT_PLACE;i++){
         mycard[i]=-1;
@@ -137,27 +99,87 @@ void game_init(int soc,int argrole){
     for(i=0;i<YAKU_NUM;i++){
         myyaku[i]=0;
         peeryaku[i]=0;
-    }
+    }    
+}
 
+// ゲーム初期化
+// role 0:親,1:子
+void game_init(int soc,int argrole){
+    int tmp=1;
+    hanahuda_soc = soc;
+    role=argrole;
+    
+    array_init();
     readImg(); // 画像読み込み
-    // サーバーのみ実行
     card_init(); // カード情報をカード構造体に格納
-    shuffle(); // 山札シャッフル
-    arrangeCard(); // 場, 手札にカードを配る
+    while(tmp==1){
+        shuffle(); // 山札シャッフル
+        tmp=arrangeCard(); // 場, 手札にカードを配る
+    }
+}
 
-    printf("place_num = %d\n",place_num);
-    printf("mycard_num = %d\n",mycard_num);
-    printf("peercard_num = %d\n",peercard_num);
-    printf("deck_num = %d\n",deck_num);
-    printf("index | place | my | peer\n");
+// カードの情報をカード構造体に格納
+void card_init(void){
+    int i,j;
+    int cnt=0;
+    // すべてのカードについて
+    for(i=1;i<=MONTH;i++){
+        for(j=0;j<MONTH_CARD;j++){
+            cards[cnt].month=i;
+            cards[cnt].num=j+1;
+            cards[cnt].rank=cardrank[i-1][j];
+            cnt++;
+        }
+    }
+}
+
+// カードをシャッフル
+void shuffle(void){
+
+    int i,rnd1,rnd2,tmp;
+    srand((unsigned) time(NULL));
+    // 全てのカードを山札に格納
+    for(i=0;i<CARD_NUM;i++){
+        deck[i]=i;
+    }
+
+    for(i=0;i<SHUFFLE_TIME;i++){
+        rnd1 = rand()%CARD_NUM;
+        rnd2 = rand()%CARD_NUM;
+        tmp = deck[rnd1];
+        deck[rnd1] = deck[rnd2];
+        deck[rnd2]=tmp;
+    }
+}
+
+// 場と手札にカードを配る処理
+// 場札に同じ月のカードが3枚以上あるとき1,それ以外のとき0を返す.
+int  arrangeCard(void){
+    int i,j,tmp;
+    for(i=0;i<PLACE_MAX;i++){
+        place[i]=-1;
+    }
+    // 場,親,子に8枚カードを出す
     for(i=0;i<INIT_PLACE;i++){
-        printf("%d | %d | %d | %d\n",i,place[i],mycard[i],peercard[i]);
+        pushPlace(popDeck());
+        mycard[i] = popDeck();
+        peercard[i] = popDeck();
     }
-    printf("山札\n");
-    for(i=deck_num;i<CARD_NUM;i++){
-        printf("(%d,%d), ",i,deck[i]);
+        // カードチェック
+    for(i=1;i<=MONTH;i++){
+        tmp=0;
+        for(j=0;j<place_num;j++){
+            if(cards[place[j]].month==i){
+                tmp++;
+            }
+        }
+        if(tmp>=3){
+            tmp=1;
+            return tmp;
+        }
     }
-    printf("\n\n\n");
+    tmp=0;
+    return tmp;
 }
 
 // 山札からカードを出す処理
@@ -225,20 +247,6 @@ void pushgetCard(int c){
     }else{
         peergetcard[peergetcard_num]=c;
         peergetcard_num++;
-    }
-}
-
-// 場と手札にカードを配る処理
-void arrangeCard(void){
-    int i;
-    for(i=0;i<PLACE_MAX;i++){
-        place[i]=-1;
-    }
-    // 場,親,子に8枚カードを出す
-    for(i=0;i<INIT_PLACE;i++){
-        pushPlace(popDeck());
-        mycard[i] = popDeck();
-        peercard[i] = popDeck();
     }
 }
 
@@ -331,6 +339,25 @@ int isGetPlace(int c){
     return flg;
 }
 
+void Keyboard(unsigned char key,int x,int y){
+    if(status==4){
+        if(key=='y'){ // こいこいするとき
+            if(role==0){
+                mykoikoi=1;
+            }else{
+                peerkoikoi=1;
+            }
+        }else if(key=='n'){ // こいこいしないとき
+            if(role==0){
+                mykoikoi=0;
+            }else{
+                peerkoikoi=0;
+            }
+        }
+
+    }
+}
+
 void Mouse(int b,int s,int x,int y){
     int tmpclick=-1;
     int tmpclickplace=-1;
@@ -389,7 +416,6 @@ void Mouse(int b,int s,int x,int y){
 
 // マウスモーション
 void PassiveMotion(int x,int y){
-    //printf("passive(%d,%d)\n",x,y);
     selectedCard = calWhichMycard(x,y);
     selectedPlaceCard = calWhichPlacecard(x,y);
 }
@@ -416,14 +442,6 @@ void PaintCards(void){
     // 場のカードを描画
     x=200;
     y=220;
-    //printf("%d,%d\n",selectedCard,clickedCard);
-    //printf("Place : %d,%d\n",selectedPlaceCard,clickedPlaceCard);
-    glBegin(GL_LINES);
-    glVertex2i(300,0);
-    glVertex2i(300,600);
-    glVertex2i(0,300);
-    glVertex2i(600,300);
-    glEnd();
 
     // 場を描画
     for(i=0;i<place_num;i++){
@@ -653,19 +671,22 @@ void checkYaku(void){
         if(cards[mygetcard[i]].rank==1){
             kasu++;
         }
-        // 配列に役を格納
+        }
+       // 配列に役を格納
         if(checkkou==5){  // 五光 
-            myyaku[0]=1; 
+            myyaku[0]=4; 
             myyaku[1]=0; // 四光, 雨四光, 三光を破棄
             myyaku[2]=0;
             myyaku[3]=0;
         }
         if((checkkou==4)&&(flgrain==0)){ // 四光
             myyaku[1]=1;
+            myyaku[2]=3;
             myyaku[3]=0;  // 三光を破棄
         }
         if((checkkou==4)&&(flgrain==1)){ // 雨四光 
-            myyaku[2]=1;
+            myyaku[1]=0;
+            myyaku[2]=2;
             myyaku[3]=0;  // 三光を破棄
         }
         if((checkkou==3)&&(flgrain==0)){ myyaku[3]=1; } // 三光
@@ -674,12 +695,20 @@ void checkYaku(void){
         if(inosikacho==3){ myyaku[6]=1;} // 猪鹿蝶
         if(akatan==3){ myyaku[7]=1;} // 赤短
         if(aotan==3){ myyaku[8]=1;} // 青短
-        if(tane>=5){ myyaku[9]=tane-5;} // タネ
-        if(tan>=5){ myyaku[10]=tan-5;} // タン
-        if(kasu>=10){ myyaku[11]=kasu-10;} // カス
+        if(tane>=5){// タネ 
+            myyaku[9]=tane-4;
+        }else{
+            myyaku[9]=0;
         }
-        for(i=0;i<YAKU_NUM;i++){
-            printf("役%d, %d\n",i,myyaku[i]);
+        if(tan>=5){ // タン 
+            myyaku[10]=tan-4;
+        }else{
+            myyaku[10]=0;
+        }
+        if(kasu>=10){ // カス
+            myyaku[11]=kasu-9;
+        }else{
+            myyaku[11]=0;
         }
     }else{
         for(i=0;i<peergetcard_num;i++){
@@ -753,17 +782,19 @@ void checkYaku(void){
         }
         // 配列に役を格納
         if(checkkou==5){  // 五光 
-            peeryaku[0]=1; 
+            peeryaku[0]=4; 
             peeryaku[1]=0; // 四光, 雨四光, 三光を破棄
             peeryaku[2]=0;
             peeryaku[3]=0;
         }
         if((checkkou==4)&&(flgrain==0)){ // 四光
-            peeryaku[1]=1;
+            peeryaku[1]=3;
+            peeryaku[2]=0;
             peeryaku[3]=0;  // 三光を破棄
         }
         if((checkkou==4)&&(flgrain==1)){ // 雨四光 
-            peeryaku[2]=1;
+            peeryaku[1]=0;
+            peeryaku[2]=2;
             peeryaku[3]=0;  // 三光を破棄
         }
         if((checkkou==3)&&(flgrain==0)){ peeryaku[3]=1; } // 三光
@@ -772,19 +803,80 @@ void checkYaku(void){
         if(inosikacho==3){ peeryaku[6]=1;} // 猪鹿蝶
         if(akatan==3){ peeryaku[7]=1;} // 赤短
         if(aotan==3){ peeryaku[8]=1;} // 青短
-        if(tane>=5){ peeryaku[9]=tane-5;} // タネ
-        if(tan>=5){ peeryaku[10]=tan-5;} // タン
-        if(kasu>=10){ peeryaku[11]=kasu-10;} // カス
-        for(i=0;i<YAKU_NUM;i++){
-            printf("役%d, %d\n",i,peeryaku[i]);
+        if(tane>=5){// タネ 
+            peeryaku[9]=tane-4;
+        }else{
+            peeryaku[9]=0;
         }
+        if(tan>=5){ // タン 
+            peeryaku[10]=tan-4;
+        }else{
+            peeryaku[10]=0;
+        }
+        if(kasu>=10){ // カス
+            peeryaku[11]=kasu-9;
+        }else{
+            peeryaku[11]=0;
+        }
+        /*for(i=0;i<YAKU_NUM;i++){
+            printf("役%d, %d\n",i,peeryaku[i]);
+        }*/
     }
     
 }
 
+int calcPoint(void){
+    int point=0;
+    int i;
+    for(i=0;i<YAKU_NUM;i++){
+        if(role==0){
+            point+=myyaku[i]*pointlist[i];
+        }else{
+            point+=peeryaku[i]*pointlist[i];
+        }
+    }
+    return point;
+}
+
+void printYaku(void){
+    int i,point;
+    printf("---------------\n");
+    for(i=0;i<YAKU_NUM;i++){
+        if(role==0){
+            if(myyaku[i]!=0){
+                printf("%s : %d点\n", yakuname[i],pointlist[i]*myyaku[i]);
+            }
+        }else{
+            if(peeryaku[i]!=0){
+                printf("%s : %d点\n", yakuname[i],pointlist[i]*peeryaku[i]);
+            }
+        }
+    }
+    point=calcPoint();
+    
+    if(point>=7){
+        point*=2;
+        printf("7点以上得点2倍 ×2\n");
+    }
+
+    if(role==0){
+        if((mykoikoi==1)||(peerkoikoi==1)){
+            point*=2;
+            printf("こいこい得点2倍 ×2\n");
+        }
+    }else{
+        if((mykoikoi==1)||(peerkoikoi==1)){
+            point*=2;
+            printf("こいこい得点2倍 ×2\n");
+        }
+    }
+
+    printf("合計 : %d点\n",point);
+}
+
 void setPacket(int *data){
     int i,j;
-    for(i=0;i<13;i++){
+    for(i=0;i<17;i++){
         if(i==0){ // turn
             data[packet_sep[i]]=turn;
         }else if(i==1){
@@ -823,13 +915,25 @@ void setPacket(int *data){
             data[packet_sep[i]] = mygetcard_num;
         }else if(i==12){
             data[packet_sep[i]] = peergetcard_num;
+        }else if(i==13){
+            for(j=0;j<YAKU_NUM;j++){ // myyaku
+                data[packet_sep[i]+j] = myyaku[j];
+            }              
+        }else if(i==14){
+            for(j=0;j<YAKU_NUM;j++){ // peeryaku
+                data[packet_sep[i]+j] = peeryaku[j];
+            }                
+        }else if(i==15){
+            data[packet_sep[i]] = mykoikoi;
+        }else if(i==16){
+            data[packet_sep[i]] = peerkoikoi;
         }
     }
 }
 
 void getPacket(int *data){
     int i,j;
-    for(i=0;i<13;i++){
+    for(i=0;i<17;i++){
         if(i==0){ // turn
             turn = data[packet_sep[i]];
         }else if(i==1){
@@ -868,78 +972,95 @@ void getPacket(int *data){
             mygetcard_num = data[packet_sep[i]];
         }else if(i==12){
             peergetcard_num = data[packet_sep[i]];
+        }else if(i==13){
+            for(j=0;j<YAKU_NUM;j++){ // myyaku
+                myyaku[j]=data[packet_sep[i]+j];
+            }              
+        }else if(i==14){
+            for(j=0;j<YAKU_NUM;j++){ // peeryaku
+                peeryaku[j]=data[packet_sep[i]+j];
+            }                
+        }else if(i==15){
+            mykoikoi=data[packet_sep[i]];
+        }else if(i==15){
+            peerkoikoi=data[packet_sep[i]];
         }
     }    
 }
 
+
 void Display(void){
     int data[DATA_LENGTH];
+    char dispstr[100];
     int r,i,j;
-    //printf("turn= %d\n",turn);
-    //printf("status= %d\n",status);
-    //printf("%d,%d\n",mycard_num,peercard_num);
-    //printf("%d,%d\n",clickedCard,clickedPlaceCard);
-    /*for(i=0;i<PLACE_MAX;i++){
-        printf("place[%d] = %d\n",i,place[i]);
-    }
-
-    for(i=0;i<CARD_NUM/2;i++){
-        printf("getcard[%d] = %d,%d\n",i,mygetcard[i],peergetcard[i]);
-    }
-
-    for(i=0;i<INIT_PLACE;i++){
-        printf("card[%d] = %d,%d\n",i,mycard[i],peercard[i]);
-    }*/
+    int tmp;
+    int tmpcard;
 
     // 描画クリア
     glClear(GL_COLOR_BUFFER_BIT);
     // カード描画
     PaintCards();
     // カード選択
-    if(status==0){
+    if(status==0){ // 同期処理と札選択
         if(turn==0){
             if(role==0){
                 setPacket(data);
                 write(hanahuda_soc,&data[0],4*DATA_LENGTH);
-                //for(i=0;i<DATA_LENGTH;i++){
-                    //printf("(%d,%d)\n",i,data[i]);
-                //}
-            }
-            if(role==1){
+                glColor3ub(0,0,0);
+                glRasterPos2i(90,250);
+                sprintf(dispstr,"your turn");
+                for(i=0;i<strlen(dispstr);i++){
+                    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,dispstr[i]);
+                }
+            }else{
                 read(hanahuda_soc,&data[0],4*DATA_LENGTH);
                 getPacket(data);
-                printf("wait\n");
-                //for(i=0;i<DATA_LENGTH;i++){
-                    //printf("(%d,%d)\n",i,data[i]);
-                //}
-              
+                glColor3ub(0,0,0);
+                glRasterPos2i(110,250);
+                sprintf(dispstr,"wait");
+                for(i=0;i<strlen(dispstr);i++){
+                    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,dispstr[i]);
+                }
             }
-            //printf("%d,%d\n",turn,role);
-    }else{
-        if(turn==1){
-            if(role==1){
-                setPacket(data);
-                write(hanahuda_soc,&data[0],4*DATA_LENGTH);
+         }else{
+            if(turn==1){
+                if(role==1){
+                    setPacket(data);
+                    write(hanahuda_soc,&data[0],4*DATA_LENGTH);
+                    glColor3ub(0,0,0);
+                    glRasterPos2i(90,250);
+                    sprintf(dispstr,"your turn");
+                    for(i=0;i<strlen(dispstr);i++){
+                        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,dispstr[i]);
+                    }
+                }
+                if(role==0){
+                    read(hanahuda_soc,&data[0],4*DATA_LENGTH);
+                    getPacket(data);
+                    glColor3ub(0,0,0);
+                    glRasterPos2i(110,250);
+                    sprintf(dispstr,"wait");
+                    for(i=0;i<strlen(dispstr);i++){
+                        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,dispstr[i]);
+                    }
+                }    
             }
-            if(role==0){
-                read(hanahuda_soc,&data[0],4*DATA_LENGTH);
-                getPacket(data);
-                printf("wait\n");
-            }
-            //printf("%d,%d\n",turn,role);        
         }
-    }
-    }else if(status==1){ 
-        // 手札と場札を獲得する処理
+        if((mykoikoi==0)||(peerkoikoi==0)){
+            status=6;
+        }
+    }else if(status==1){ // 手札から出した札で札が取れるとき
+        // 場札の獲得
         r = popHandCard(clickedCard);
         pushgetCard(r);
         r = popPlace(clickedPlaceCard);
         pushgetCard(r);
 
+        // 山札から出した札の処理
         r = popDeck();
-        if(isGetPlace(r)==0){
+        if(isGetPlace(r)==0){ // 取れる札がないとき
             pushPlace(r);
-        }else if(isGetPlace(r)==1){
+        }else if(isGetPlace(r)==1){ // 取れる札が1枚のとき
             pushgetCard(r);
             for(i=0;i<place_num;i++){
                 if(cards[r].month==cards[place[i]].month){
@@ -948,29 +1069,30 @@ void Display(void){
                 }
             }
             pushgetCard(r);
-        }else if(isGetPlace(r)==2){
-            tmp_card=r;
-            status=3;
+        }else if(isGetPlace(r)>=2){ // 取れる札が2枚のとき
+            for(i=0;i<place_num;i++){ // 得点の高い札を探索
+                if(cards[place[i]].month==cards[r].month){ // rと月が一緒なら
+                    if(tmp<cards[place[i]].rank){
+                        tmpcard=place[i];
+                        tmp=cards[place[i]].rank;
+                    }
+                }
+            }
+            pushgetCard(r);
+            r = popPlace(tmpcard);
+            pushgetCard(r);
         }
-        checkYaku();
-        selectedCard=-1;
-        clickedCard=-1;
-        selectedPlaceCard=-1;
-        clickedPlaceCard=-1;
-        turn=1-turn;
-        // パケット送信準備
-        setPacket(data);
-
-        write(hanahuda_soc,data,4*DATA_LENGTH);
-        status=0;
-
-    }else if(status==2){ // カードを出すだけの処理
+        status=3; // 役の処理へ
+    }else if(status==2){ // 手札から出した札で札が取れないとき
+        // 手札から1枚だす
         r = popHandCard(clickedCard);
-        pushPlace(r);  
+        pushPlace(r); 
+
+        // 山札から出した札の処理
         r = popDeck();
-        if(isGetPlace(r)==0){
+        if(isGetPlace(r)==0){ // 取れる札がないとき
             pushPlace(r);
-        }else if(isGetPlace(r)==1){
+        }else if(isGetPlace(r)==1){ // 取れる札が1枚のとき
             pushgetCard(r);
             for(i=0;i<place_num;i++){
                 if(cards[r].month==cards[place[i]].month){
@@ -979,11 +1101,74 @@ void Display(void){
                 }
             }
             pushgetCard(r);
-        }else if(isGetPlace(r)==2){
-            tmp_card=r;
-            status=3;
+        }else if(isGetPlace(r)>=2){ // 取れる札が2枚のとき
+            for(i=0;i<place_num;i++){ // 得点の高い札を探索
+                if(cards[place[i]].month==cards[r].month){ // rと月が一緒なら
+                    if(tmp<cards[place[i]].rank){
+                        tmpcard=place[i];
+                        tmp=cards[place[i]].rank;
+                    }
+                }
+            }
+            pushgetCard(r);
+            r = popPlace(tmpcard);
+            pushgetCard(r);
         }
-        checkYaku();
+        status=3; // 役の処理へ      
+    }else if(status==3){ // 役の処理
+    // 1つ前の役の和を計算
+    tmp=0;
+    if(role==0){
+        for(i=0;i<YAKU_NUM;i++){
+            tmp+=myyaku[i];
+        }
+    }else{
+        for(i=0;i<YAKU_NUM;i++){
+            tmp+=peeryaku[i];
+        }
+    }
+    checkYaku();
+    // 今の役の和を計算
+    r=0;
+    if(role==0){
+        for(i=0;i<YAKU_NUM;i++){
+            r+=myyaku[i];
+        }
+    }else{
+        for(i=0;i<YAKU_NUM;i++){
+            r+=peeryaku[i];
+        }
+    }
+    if(role==0){
+        if(tmp!=r){
+            printYaku();
+            mykoikoi=-1;
+            status=4;
+        }else{status=5;}   
+    }else{
+        if(tmp!=r){
+            printYaku();
+            peerkoikoi=-1;
+            status=4;
+        }else{status=5;}
+    }
+    }else if(status==4){ // こいこいの処理
+        if((turn==0)&&(role==0)){
+            PutSprite(koikoiimg,200,200,&koikoiinfo,1);
+        }else if((turn==1)&&(role==1)){
+            PutSprite(koikoiimg,200,200,&koikoiinfo,1);
+        }
+
+        if(role==0){
+            if(mykoikoi!=-1){ // ゲーム終了処理
+                status=5;
+            }
+        }else{
+            if(peerkoikoi!=-1){ // ゲーム終了処理
+                status=5;
+            }
+        }
+    }else if(status==5){ // ターン終了処理
         selectedCard=-1;
         clickedCard=-1;
         selectedPlaceCard=-1;
@@ -991,11 +1176,30 @@ void Display(void){
         turn=1-turn;
         // パケット送信準備
         setPacket(data);
-
         write(hanahuda_soc,data,4*DATA_LENGTH);
-        status=0;
-    }else if(status==3){ // めくり札で取れるカードが2枚以上あるとき
-
+        if(role==0){
+            if(mykoikoi==0){
+                status=6;
+            }else{
+                status=0;
+            }
+        }else{
+            if(peerkoikoi==0){
+                status=6;
+            }else{
+                status=0;
+            }
+        }
+    }else if(status==6){ // ゲーム終了処理
+        printYaku();
+        if(mykoikoi==0){
+            printf("親の勝ちです\n");
+        }
+        if(peerkoikoi==0){
+            printf("子の勝ちです\n");
+        }
+        printf("ゲームを終了してください\n");
+        status=7;
     }
     // 描画の反映
     glFlush(); 

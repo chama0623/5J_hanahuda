@@ -15,6 +15,7 @@ int main(int argc,char **argv){
     // 関数登録
     glutDisplayFunc(Display);
     glutReshapeFunc(Reshape);
+    glutKeyboardFunc(Keyboard);
     glutMouseFunc(Mouse);
     glutPassiveMotionFunc(PassiveMotion);
     glutTimerFunc(500,Timer,0);

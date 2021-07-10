@@ -20,7 +20,7 @@
 #define SHUFFLE_TIME 1000
 #define YAKU_NUM 12
 
-static int pointlist[YAKU_NUM] = {10,7,8,5,5,5,5,5,5,1,1,1}; // 役を取った時の倍率
+static int pointlist[YAKU_NUM] = {10,8,7,5,5,5,5,5,5,1,1,1}; // 役を取った時の倍率
 static int packet_sep[17] ={0,1,49,62,70,78,102,126,127,128,129,130,131,132,144,156,157};  
 static GLuint cardimg[ALL_CARD];
 static pngInfo cardinfo[ALL_CARD];

@@ -6,7 +6,7 @@ CC = gcc
 CCFLAGS = -Wall -I/usr/include/opengl
 LD = gcc
 LDFLAGS =
-LIBS = -g -O0 -lglpng -lglut32 -lglu32 -lopengl32 -lm #myicon.o
+LIBS = -lglpng -lglut32 -lglu32 -lopengl32 -lm #myicon.o
 
 all:	s c
 

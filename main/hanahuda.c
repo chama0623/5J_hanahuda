@@ -20,7 +20,7 @@ void Reshape(int w,int h){
 // タイマーの処理
 void Timer(int value){
     glutPostRedisplay();
-    glutTimerFunc(500,Timer,0);
+    glutTimerFunc(100,Timer,0);
 }
 
 // (x,y)に大きさscaleの画像を表示
@@ -617,6 +617,7 @@ void checkYaku(void){
         if((cards[mygetcard[i]].month==9)&&(cards[mygetcard[i]].rank==3)){
             hanami++;
             tukimi++;
+            kasu++;
         }
         // 花見チェック
         if((cards[mygetcard[i]].month==3)&&(cards[mygetcard[i]].rank==4)){
@@ -674,19 +675,19 @@ void checkYaku(void){
         }
        // 配列に役を格納
         if(checkkou==5){  // 五光 
-            myyaku[0]=4; 
+            myyaku[0]=1; 
             myyaku[1]=0; // 四光, 雨四光, 三光を破棄
             myyaku[2]=0;
             myyaku[3]=0;
         }
         if((checkkou==4)&&(flgrain==0)){ // 四光
             myyaku[1]=1;
-            myyaku[2]=3;
+            myyaku[2]=0;
             myyaku[3]=0;  // 三光を破棄
         }
         if((checkkou==4)&&(flgrain==1)){ // 雨四光 
             myyaku[1]=0;
-            myyaku[2]=2;
+            myyaku[2]=1;
             myyaku[3]=0;  // 三光を破棄
         }
         if((checkkou==3)&&(flgrain==0)){ myyaku[3]=1; } // 三光
@@ -782,19 +783,19 @@ void checkYaku(void){
         }
         // 配列に役を格納
         if(checkkou==5){  // 五光 
-            peeryaku[0]=4; 
+            peeryaku[0]=1; 
             peeryaku[1]=0; // 四光, 雨四光, 三光を破棄
             peeryaku[2]=0;
             peeryaku[3]=0;
         }
         if((checkkou==4)&&(flgrain==0)){ // 四光
-            peeryaku[1]=3;
+            peeryaku[1]=1;
             peeryaku[2]=0;
             peeryaku[3]=0;  // 三光を破棄
         }
         if((checkkou==4)&&(flgrain==1)){ // 雨四光 
             peeryaku[1]=0;
-            peeryaku[2]=2;
+            peeryaku[2]=1;
             peeryaku[3]=0;  // 三光を破棄
         }
         if((checkkou==3)&&(flgrain==0)){ peeryaku[3]=1; } // 三光
@@ -818,11 +819,7 @@ void checkYaku(void){
         }else{
             peeryaku[11]=0;
         }
-        /*for(i=0;i<YAKU_NUM;i++){
-            printf("役%d, %d\n",i,peeryaku[i]);
-        }*/
     }
-    
 }
 
 int calcPoint(void){
@@ -853,22 +850,22 @@ void printYaku(void){
         }
     }
     point=calcPoint();
-    
+
+    if(role==0){
+        if(peerkoikoi==1){
+            point*=2;
+            printf("相手こいこい得点2倍 ×2\n");
+        }
+    }else{
+        if(mykoikoi==1){
+            point*=2;
+            printf("相手こいこい得点2倍 ×2\n");
+        }
+    }
+
     if(point>=7){
         point*=2;
         printf("7点以上得点2倍 ×2\n");
-    }
-
-    if(role==0){
-        if((mykoikoi==1)||(peerkoikoi==1)){
-            point*=2;
-            printf("こいこい得点2倍 ×2\n");
-        }
-    }else{
-        if((mykoikoi==1)||(peerkoikoi==1)){
-            point*=2;
-            printf("こいこい得点2倍 ×2\n");
-        }
     }
 
     printf("合計 : %d点\n",point);
@@ -995,6 +992,7 @@ void Display(void){
     int r,i,j;
     int tmp;
     int tmpcard;
+    int tmpyaku[YAKU_NUM];
 
     // 描画クリア
     glClear(GL_COLOR_BUFFER_BIT);
@@ -1049,6 +1047,9 @@ void Display(void){
         if((mykoikoi==0)||(peerkoikoi==0)){
             status=6;
         }
+        if((mycard_num==0)&&(peercard_num==0)){
+            status=6;
+        }
     }else if(status==1){ // 手札から出した札で札が取れるとき
         // 場札の獲得
         r = popHandCard(clickedCard);
@@ -1070,10 +1071,11 @@ void Display(void){
             }
             pushgetCard(r);
         }else if(isGetPlace(r)>=2){ // 取れる札が2枚のとき
+            tmp=0;
             for(i=0;i<place_num;i++){ // 得点の高い札を探索
                 if(cards[place[i]].month==cards[r].month){ // rと月が一緒なら
                     if(tmp<cards[place[i]].rank){
-                        tmpcard=place[i];
+                        tmpcard=i;
                         tmp=cards[place[i]].rank;
                     }
                 }
@@ -1102,10 +1104,11 @@ void Display(void){
             }
             pushgetCard(r);
         }else if(isGetPlace(r)>=2){ // 取れる札が2枚のとき
+            tmp=0;
             for(i=0;i<place_num;i++){ // 得点の高い札を探索
                 if(cards[place[i]].month==cards[r].month){ // rと月が一緒なら
                     if(tmp<cards[place[i]].rank){
-                        tmpcard=place[i];
+                        tmpcard=i;
                         tmp=cards[place[i]].rank;
                     }
                 }
@@ -1120,33 +1123,38 @@ void Display(void){
     tmp=0;
     if(role==0){
         for(i=0;i<YAKU_NUM;i++){
-            tmp+=myyaku[i];
+            tmpyaku[i]=myyaku[i];
         }
     }else{
         for(i=0;i<YAKU_NUM;i++){
-            tmp+=peeryaku[i];
+            tmpyaku[i]=peeryaku[i];
         }
     }
     checkYaku();
-    // 今の役の和を計算
-    r=0;
     if(role==0){
         for(i=0;i<YAKU_NUM;i++){
-            r+=myyaku[i];
+            if(tmpyaku[i]!=myyaku[i]){
+                tmp=1;
+                break;
+            }
         }
     }else{
         for(i=0;i<YAKU_NUM;i++){
-            r+=peeryaku[i];
+            if(tmpyaku[i]!=peeryaku[i]){
+                tmp=1;
+                break;
+            }
         }
-    }
+    }    
+
     if(role==0){
-        if(tmp!=r){
+        if(tmp==1){
             printYaku();
             mykoikoi=-1;
             status=4;
         }else{status=5;}   
     }else{
-        if(tmp!=r){
+        if(tmp==1){
             printYaku();
             peerkoikoi=-1;
             status=4;
@@ -1160,11 +1168,11 @@ void Display(void){
         }
 
         if(role==0){
-            if(mykoikoi!=-1){ // ゲーム終了処理
+            if(mykoikoi!=-1){
                 status=5;
             }
         }else{
-            if(peerkoikoi!=-1){ // ゲーム終了処理
+            if(peerkoikoi!=-1){ 
                 status=5;
             }
         }
@@ -1192,6 +1200,9 @@ void Display(void){
         }
     }else if(status==6){ // ゲーム終了処理
         printYaku();
+        if((mykoikoi!=0)&&(peerkoikoi!=0)){
+            printf("引き分け\n");
+        }
         if(mykoikoi==0){
             printf("親の勝ちです\n");
         }

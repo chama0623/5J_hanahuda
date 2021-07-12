@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+// ウィンドウサイズが変更されたときの処理
 void Reshape(int w,int h){
     glViewport(0,0,w,h);
     glMatrixMode(GL_MODELVIEW);
@@ -37,8 +38,8 @@ void Reshape(int w,int h){
 
 // タイマーの処理
 void Timer(int value){
-    glutPostRedisplay();
-    glutTimerFunc(100,Timer,0);
+    glutPostRedisplay(); // 再描画
+    glutTimerFunc(100,Timer,0); // 100秒後にタイマーを呼ぶ
 }
 
 // (x,y)に大きさscaleの画像を表示
@@ -79,7 +80,7 @@ void readImg(void){
     char fname[100];
     int i,j;
     int cnt=0;
-    // 全カード読み込み
+    // 全札読み込み
     for(i=0;i<MONTH;i++){
         for(j=0;j<MONTH_CARD;j++){
             sprintf(fname,".\\card\\%s-%d.png",month[i],j+1);
@@ -89,11 +90,12 @@ void readImg(void){
             cnt++;
         }
     }
-    // 裏返しのカード(back)を読み込み
+    // 裏返しの黒い札(back)を読み込み
     sprintf(fname,".\\card\\back.png");
     cardimg[cnt] = pngBind(fname, PNG_NOMIPMAP, PNG_ALPHA, 
         &cardinfo[cnt], GL_CLAMP, GL_NEAREST, GL_NEAREST);
 
+    // こいこい時のポップアップ用の画像を読み込む処理
     sprintf(fname,".\\koikoi.png");
     koikoiimg = pngBind(fname, PNG_NOMIPMAP, PNG_ALPHA, 
         &koikoiinfo, GL_CLAMP, GL_NEAREST, GL_NEAREST);        
@@ -103,6 +105,9 @@ void readImg(void){
 void array_init(void){
     int i;
     // 配列の初期化
+    for(i=0;i<PLACE_MAX;i++){
+        place[i]=-1;
+    }
     for(i=0;i<INIT_PLACE;i++){
         mycard[i]=-1;
         peercard[i]=-1;
@@ -120,70 +125,52 @@ void array_init(void){
     }    
 }
 
-// ゲーム初期化
-// role 0:親,1:子
-void game_init(int soc,int argrole){
-    int tmp=1;
-    hanahuda_soc = soc;
-    role=argrole;
-    
-    array_init();
-    readImg(); // 画像読み込み
-    card_init(); // カード情報をカード構造体に格納
-    while(tmp==1){
-        shuffle(); // 山札シャッフル
-        tmp=arrangeCard(); // 場, 手札にカードを配る
-    }
-}
-
-// カードの情報をカード構造体に格納
+// 札の情報をカード構造体に格納
 void card_init(void){
     int i,j;
     int cnt=0;
-    // すべてのカードについて
-    for(i=1;i<=MONTH;i++){
-        for(j=0;j<MONTH_CARD;j++){
-            cards[cnt].month=i;
-            cards[cnt].num=j+1;
-            cards[cnt].rank=cardrank[i-1][j];
+    // すべての札について
+    for(i=1;i<=MONTH;i++){ // 12回(月の回数)ループ
+        for(j=0;j<MONTH_CARD;j++){ // 4回ループ
+            cards[cnt].month=i; // 月
+            cards[cnt].num=j+1; // 札番号
+            cards[cnt].rank=cardrank[i-1][j]; //　点数
             cnt++;
         }
     }
 }
 
-// カードをシャッフル
+// 札をシャッフル
 void shuffle(void){
 
     int i,rnd1,rnd2,tmp;
-    srand((unsigned) time(NULL));
-    // 全てのカードを山札に格納
+    srand((unsigned) time(NULL)); // 乱数初期化
+    // 全ての札を山札に格納
     for(i=0;i<CARD_NUM;i++){
         deck[i]=i;
     }
 
     for(i=0;i<SHUFFLE_TIME;i++){
-        rnd1 = rand()%CARD_NUM;
-        rnd2 = rand()%CARD_NUM;
+        rnd1 = rand()%CARD_NUM; // ランダムに1枚指定
+        rnd2 = rand()%CARD_NUM; // ランダムに1枚指定
+        // 指定した札を交換
         tmp = deck[rnd1];
         deck[rnd1] = deck[rnd2];
         deck[rnd2]=tmp;
     }
 }
 
-// 場と手札にカードを配る処理
-// 場札に同じ月のカードが3枚以上あるとき1,それ以外のとき0を返す.
+// 場と手札に札を配る処理
+// 場札に同じ月の札が3枚以上あるとき1,それ以外のとき0を返す.
 int  arrangeCard(void){
     int i,j,tmp;
-    for(i=0;i<PLACE_MAX;i++){
-        place[i]=-1;
-    }
-    // 場,親,子に8枚カードを出す
+    // 場,親,子に8枚札を出す
     for(i=0;i<INIT_PLACE;i++){
         pushPlace(popDeck());
         mycard[i] = popDeck();
         peercard[i] = popDeck();
     }
-        // カードチェック
+        // 場の状態を確認
     for(i=1;i<=MONTH;i++){
         tmp=0;
         for(j=0;j<place_num;j++){
@@ -191,7 +178,7 @@ int  arrangeCard(void){
                 tmp++;
             }
         }
-        if(tmp>=3){
+        if(tmp>=3){ // 場に3枚以上同じ月の札があるとき
             tmp=1;
             return tmp;
         }
@@ -200,19 +187,35 @@ int  arrangeCard(void){
     return tmp;
 }
 
-// 山札からカードを出す処理
-// カードのインデックスを返す
+// 対局初期化
+// role 0:親,1:子
+void game_init(int soc,int argrole){
+    int tmp=1;
+    hanahuda_soc = soc;
+    role=argrole;
+    
+    array_init();
+    readImg(); // 画像読み込み
+    card_init(); // 札情報をcardstruct構造体に格納
+    while(tmp==1){
+        shuffle(); // 山札シャッフル
+        tmp=arrangeCard(); // 場, 手札に札を配る
+    }
+}
+
+// 山札から札を出す処理
+// 札のインデックスを返す
 int popDeck(void){
     deck_num++;
     return deck[deck_num-1];
 }
 
-// 場にカードを入れる処理
+// 場に札を入れる処理
 void pushPlace(int c){
     place[place_num++]=c;
 }
 
-// 場からカードを出す処理
+// 場から札を出す処理
 int popPlace(int index){
     int i;
     int tmp=place[index];
@@ -224,29 +227,18 @@ int popPlace(int index){
     return tmp;
 }
 
-// 手札にカードを入れる処理
-void pushHandCard(int c){
-    if(role==0){
-        mycard[mycard_num] = c;
-        mycard_num++;
-    }else{
-        peercard[peercard_num] = c;
-        peercard_num++;
-    }
-}
-
-// 手札からカードを出す処理
+// 手札から札を出す処理
 int popHandCard(int index){
     int i;
     int tmp;
-    if(role==0){
+    if(role==0){ // 親のとき
         tmp = mycard[index];
         for(i=index+1;i<mycard_num;i++){
             mycard[i-1]=mycard[i];
         }
         mycard[mycard_num-1]=-1;
         mycard_num--;
-    }else{
+    }else{ // 子のとき
         tmp = peercard[index];
         for(i=index+1;i<peercard_num;i++){
             peercard[i-1]=peercard[i];
@@ -257,7 +249,7 @@ int popHandCard(int index){
     return tmp;    
 }
 
-// 持ち札にカードを入れる処理
+// 持ち札に札を入れる処理
 void pushgetCard(int c){
     if(role==0){
         mygetcard[mygetcard_num]=c;
@@ -268,7 +260,7 @@ void pushgetCard(int c){
     }
 }
 
-// 場札のどのカードの上にマウスがあるか計算する処理
+// 場札のどの札の上にマウスがあるか計算する処理
 int calWhichPlacecard(int x,int y){
     int index=-1;
     // 上段の判定
@@ -300,7 +292,7 @@ int calWhichPlacecard(int x,int y){
     return index;
 }
 
-// 手札のどのカードの上にマウスがあるか計算する処理
+// 手札のどの札の上にマウスがあるか計算する処理
 // -1:手札の上にマウスがない
 // 0～7:手札の番号
 int calWhichMycard(int x,int y){
@@ -325,10 +317,10 @@ int calWhichMycard(int x,int y){
     return index;
 }
 
-// 選択されている手札のカードで取れる場のカードがあるか
+// 選択されている手札の札で取れる場の札があるか
 // ある:取れる枚数
 // ない:0
-// index:自分のカードのmycardにおけるインデックス
+// index:自分の札のmycardにおけるインデックス
 int isGetCard(int index){
     int i;
     int flag=0;
@@ -346,6 +338,7 @@ int isGetCard(int index){
     return flag;
 }
 
+// 引数で与えた札cで取れる札が場にあるか
 int isGetPlace(int c){
     int i;
     int flg=0;
@@ -357,6 +350,7 @@ int isGetPlace(int c){
     return flg;
 }
 
+// キーボード入力の処理
 void Keyboard(unsigned char key,int x,int y){
     if(status==4){
         if(key=='y'){ // こいこいするとき
@@ -376,6 +370,7 @@ void Keyboard(unsigned char key,int x,int y){
     }
 }
 
+// マウス入力の処理
 void Mouse(int b,int s,int x,int y){
     int tmpclick=-1;
     int tmpclickplace=-1;
@@ -390,12 +385,12 @@ void Mouse(int b,int s,int x,int y){
                 if(tmpclickplace!=-1){
                     clickedPlaceCard=tmpclickplace;
                 }            
-                // カードを場札に捨てる状態のとき
+                // 札を場札に捨てる状態のとき
                 if((clickedCard!=-1)&&(clickedPlaceCard==-1)){
                     if(isGetCard(clickedCard)==0){
                         status=2;
                     }
-                }else if((clickedCard!=-1)&&(clickedPlaceCard!=-1)){// カードを取れる状態のとき
+                }else if((clickedCard!=-1)&&(clickedPlaceCard!=-1)){// 札を取れる状態のとき
                     if(cards[mycard[clickedCard]].month != cards[place[clickedPlaceCard]].month){
                         clickedPlaceCard=-1;
                     }else{
@@ -415,12 +410,12 @@ void Mouse(int b,int s,int x,int y){
                 if(tmpclickplace!=-1){
                     clickedPlaceCard=tmpclickplace;
                 }            
-                // カードを場札に捨てる状態のとき
+                // 札を場札に捨てる状態のとき
                 if((clickedCard!=-1)&&(clickedPlaceCard==-1)){
                     if(isGetCard(clickedCard)==0){
                         status=2;
                     }
-                }else if((clickedCard!=-1)&&(clickedPlaceCard!=-1)){// カードを取れる状態のとき
+                }else if((clickedCard!=-1)&&(clickedPlaceCard!=-1)){// 札を取れる状態のとき
                     if(cards[peercard[clickedCard]].month != cards[place[clickedPlaceCard]].month){
                         clickedPlaceCard=-1;
                     }else{
@@ -438,7 +433,7 @@ void PassiveMotion(int x,int y){
     selectedPlaceCard = calWhichPlacecard(x,y);
 }
 
-// 指定された座標をカードの大きさで囲む
+// 指定された座標を札の大きさで囲む
 void surroundCard(int x,int y,int R,int G,int B){
     glLineWidth(2.0);
     glColor3ub(R,G,B);
@@ -453,11 +448,11 @@ void surroundCard(int x,int y,int R,int G,int B){
     glLineWidth(1.0);
 }
 
-// カードを描画
+// 札を描画
 void PaintCards(void){
     int i,j,num;
     int x,y;
-    // 場のカードを描画
+    // 場の札を描画
     x=200;
     y=220;
 
@@ -609,6 +604,7 @@ void PaintCards(void){
     }
 }
 
+// 役のチェック
 void checkYaku(void){
     int i,num;
     int checkkou=0;
@@ -840,6 +836,7 @@ void checkYaku(void){
     }
 }
 
+// 得点の計算
 int calcPoint(void){
     int point=0;
     int i;
@@ -853,6 +850,7 @@ int calcPoint(void){
     return point;
 }
 
+// 役の表示
 void printYaku(void){
     int i,point;
     printf("---------------\n");
@@ -889,6 +887,7 @@ void printYaku(void){
     printf("合計 : %d点\n",point);
 }
 
+// 送信するパケットの設定
 void setPacket(int *data){
     int i,j;
     for(i=0;i<17;i++){
@@ -946,6 +945,7 @@ void setPacket(int *data){
     }
 }
 
+// 受信したパケットの解読
 void getPacket(int *data){
     int i,j;
     for(i=0;i<17;i++){
@@ -1003,7 +1003,7 @@ void getPacket(int *data){
     }    
 }
 
-
+// メインループ
 void Display(void){
     int data[DATA_LENGTH];
     char dispstr[100];
@@ -1014,9 +1014,9 @@ void Display(void){
 
     // 描画クリア
     glClear(GL_COLOR_BUFFER_BIT);
-    // カード描画
+    // 札描画
     PaintCards();
-    // カード選択
+    // 札選択
     if(status==0){ // 同期処理と札選択
         if(turn==0){
             if(role==0){

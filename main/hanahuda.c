@@ -997,7 +997,7 @@ void getPacket(int *data){
             }                
         }else if(i==15){
             mykoikoi=data[packet_sep[i]];
-        }else if(i==15){
+        }else if(i==16){
             peerkoikoi=data[packet_sep[i]];
         }
     }    

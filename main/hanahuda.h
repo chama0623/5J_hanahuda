@@ -92,7 +92,6 @@ void game_init(int,int);
 int popDeck(void);
 void pushPlace(int c);
 int popPlace(int);
-void pushHandCard(int);
 int popHandCard(int);
 void pushgetCard(int);
 int arrangeCard(void);

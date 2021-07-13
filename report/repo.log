@@ -1,4 +1,4 @@
-This is e-pTeX, Version 3.14159265-p3.8.2-190908-2.6 (utf8.euc) (TeX Live 2019/Debian) (preloaded format=platex 2020.10.18)  12 JUL 2021 20:52
+This is e-pTeX, Version 3.14159265-p3.8.2-190908-2.6 (utf8.euc) (TeX Live 2019/Debian) (preloaded format=platex 2020.10.18)  13 JUL 2021 21:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -462,30 +462,30 @@ File: ./img/turn-flow.eps Graphic file (type eps)
 <./img/turn-flow.eps>
 [3]
 LaTeX Font Info:    Trying to load font information for TS1+txr on input line 1
-80.
+81.
 (/usr/share/texlive/texmf-dist/tex/latex/txfonts/ts1txr.fd
 File: ts1txr.fd 2000/12/15 v3.1
-)
+) [4]
 LaTeX Font Info:    Trying to load font information for U+txmia on input line 2
-03.
+04.
 (/usr/share/texlive/texmf-dist/tex/latex/txfonts/utxmia.fd
 File: utxmia.fd 2000/12/15 v3.1
 )
 LaTeX Font Info:    Trying to load font information for U+txsya on input line 2
-03.
+04.
 (/usr/share/texlive/texmf-dist/tex/latex/txfonts/utxsya.fd
 File: utxsya.fd 2000/12/15 v3.1
 )
 LaTeX Font Info:    Trying to load font information for U+txsyb on input line 2
-03.
+04.
 (/usr/share/texlive/texmf-dist/tex/latex/txfonts/utxsyb.fd
 File: utxsyb.fd 2000/12/15 v3.1
 )
 LaTeX Font Info:    Trying to load font information for U+txsyc on input line 2
-03.
+04.
 (/usr/share/texlive/texmf-dist/tex/latex/txfonts/utxsyc.fd
 File: utxsyc.fd 2000/12/15 v3.1
-) [4]
+)
 LaTeX Font Info:    Trying to load font information for OT1+txtt on input line 
 217.
 (/usr/share/texlive/texmf-dist/tex/latex/txfonts/ot1txtt.fd
@@ -521,18 +521,39 @@ LaTeX Font Info:    Font shape `JY1/mc/bx/n' in size <10> not available
 (Font)              Font shape `JY1/gt/m/n' tried instead on input line 340.
 LaTeX Font Info:    Font shape `OT1/txr/b/n' in size <10> not available
 (Font)              Font shape `OT1/txr/bx/n' tried instead on input line 340.
-[7] [8] [9] [10] [11] [12] (./repo.aux)
+[7] [8] [9] [10] [11]
+Overfull \hbox (5.56058pt too wide) in paragraph at lines 618--619
+[][][][][][][][][][][][][][][][][][][][][][][][] 
+ []
+
+[12] [13]
+File: ./img/xy.eps Graphic file (type eps)
+<./img/xy.eps>
+[14] [15] [16] [17] [18] [19] [20] [21]
+File: ./img/packet.eps Graphic file (type eps)
+<./img/packet.eps>
+[22] [23] [24]
+File: ./img/koikoi.png Graphic file (type bmp)
+<./img/koikoi.png>
+[25] [26] [27] [28] [29] [30]
+Underfull \hbox (badness 10000) in paragraph at lines 1758--1759
+[]\OT1/txr/m/n/10 Nintendo, \JY1/mc/m/n/10 花札の歴史 ・ 遊び方\OT1/txr/m/n/10 
+,$\OT1/txtt/m/n/10 hhttps : / / www . nintendo . co . jp / others / hanafuda _ 
+kabufuda /
+ []
+
+[31] (./repo.aux)
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
  ) 
 Here is how much of TeX's memory you used:
- 6763 strings out of 482863
- 92971 string characters out of 5959217
- 558309 words of memory out of 5000000
- 21985 multiletter control sequences out of 15000+600000
+ 6961 strings out of 482863
+ 95610 string characters out of 5959217
+ 568309 words of memory out of 5000000
+ 22177 multiletter control sequences out of 15000+600000
  556232 words of font info for 100 fonts, out of 8000000 for 9000
  264 hyphenation exceptions out of 8191
  48i,8n,51p,297b,1757s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on repo.dvi (13 pages, 68684 bytes).
+Output written on repo.dvi (32 pages, 249300 bytes).

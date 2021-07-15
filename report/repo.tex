@@ -48,7 +48,7 @@
 }
 
 \title{自由課題}
-\date{提出日　2021年7月27日 14:20}
+\date{提出期限　2021年7月27日 14:20}
 \department{組番号 409}
 \id{17406}
 \author{金澤雄大}
@@ -71,7 +71,7 @@
     花札の基礎と用語について説明する. 花札のカードは全48枚の札から構成されている. 札には1月から12月までの札が各4枚ずつ存在する. 各月の札の絵柄は図\ref{jan}～図\ref{dec}に示す通りである.
     札は月とは別に描かれている絵の種類で光札, タネ札, タン札, カス札の4種類に分けられる. 光札は最もレア度の高い札で1月の鶴が描かれている札, 3月の桜と幕が描かれている札, 8月の月が描かれている札, 11月の小野道風にカエル
     が描かれている札, 12月の桐に鳳凰が描かれている札の5枚のみである. タネ札は光札以外で動物や橋, 盃(さかずき)が描かれている札である. タン札は短冊が描かれている札である. カス札は植物のみが描かれている札である. 間違えやすい
-    札として11月のカス札がある. 11月のカス札は黒と赤で構成されていて, 太鼓のようなものが描かれているがカス札である. 例外として9月のタネ札(盃が描かれている札)はタン札とタネ札の両方としてカウントする.
+    札として11月のカス札がある. 11月のカス札は黒と赤で構成されていて, 太鼓のようなものが描かれているがカス札である. 例外として9月のタネ札(盃が描かれている札)はカス札とタネ札の両方としてカウントする.
     
     \begin{figure}[H]
     \centering
@@ -1748,11 +1748,92 @@ void getPacket(int *data);
 void Display(void);
     \end{lstlisting}
 
+    \subsection{Makefile}
+    リスト\ref{makefile}にmainディレクトリのMakefileのコードを示す.
+    \begin{lstlisting}[basicstyle=\ttfamily\footnotesize, frame=single,label=makefile,caption=Makefile]
+MYLIBDIR = ../mylib
+MYLIB    = $(MYLIBDIR)/mylib.a
+CFLAGS   = -I$(MYLIBDIR)
+
+CC = gcc
+CCFLAGS = -Wall -I/usr/include/opengl
+LD = gcc
+LDFLAGS =
+LIBS = -lglpng -lglut32 -lglu32 -lopengl32 -lm #myicon.o
+
+all:	s c
+
+s:		server.o hanahuda.o
+		$(CC) -o $@ $^ $(MYLIB)	$(LIBS)	
+
+c:		client.o hanahuda.o
+		$(CC) -o $@ $^ $(MYLIB) $(LIBS)
+
+server.o client.o:	hanahuda.h
+
+clean:
+		 $(RM) s c *.o *~
+    \end{lstlisting}
+
     \section{実行結果}
     本章では実行結果としてマウスの処理, こいこい時の表示, ゲーム終了時の表示の3つについて述べる.
     \subsection{マウスの処理}
+    マウス処理ができていることを確認する. マウス入力は, マウスが乗っている手札を赤, クリックした手札を青で囲む処理ができていることを確認する.
+    まず, マウスが乗っている手札をが赤い四角形で囲まれることを確認する. 図\ref{selectred}に手札の上にマウスを乗せたときの画面表示を示す. スクリーンショットの関係で
+    マウスが表示されていないが, マウスが乗っている右から3番目の手札が赤い四角形で囲まれていることがわかる.
+
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=1.0]{./img/select.eps}
+    \caption{マウスが乗っている札が赤で囲まれることの確認}
+    \label{selectred}
+    \end{figure}
+
+    次にクリックした札が青い四角形で囲まれることを確認する. 図\ref{clickblue}に札をクリックしたときの画面表示を示す. 場札に同じ月の札がある
+    9月のタン札をクリックすると青い四角形で囲まれることが確認できた.
+
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=1.0]{./img/click.eps}
+    \caption{札をクリックしたときの表示}
+    \label{clickblue}
+    \end{figure}
+
     \subsection{こいこい時の表示}
+    こいこい時にウィンドウにはこいこいのポップアップ, コンソールには役が表示されることを確認する. 図\ref{koikoipopup}にこいこい時の
+    画面とコンソールの表示を示す. 図\ref{koikoipopup}は親が月見で一杯の役を完成させたときのこいこいの表示である. 役が完成するとウィンドウに
+    「こいこいしますか?」と表示され, コンソールに役と得点が表示されることが確認できる.
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=1.0]{./img/koikoi_popup.eps}
+    \caption{こいこい時の表示}
+    \label{koikoipopup}
+    \end{figure}
+
     \subsection{ゲーム終了時の表示}
+    ゲーム終了時のウィンドウとコンソール表示を確認する. ゲームが終了するとウィンドウにはそれまでの盤面が表示され, コンソールには自分側の得点と勝敗が表示される.
+    図\ref{gameend}にゲーム終了時のウィンドウ表示を示す. 図\ref{clickblue}に示したようにプレイ中はターン中のプレイヤーの画面に「your turn」, もしくは「wait」
+    と表示されるがゲーム終了時は何も表示されない. またコンソールには図\ref{gameendconsole}自分のでき役と得点が表示される. 図\ref{gameend}と
+    図\ref{gameendconsole}の例では花見で一杯, 月見で一杯の役ができており, 加えて7点以上2倍によって合計20点の得点が表示されていることが読み取れる.
+
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=1.0]{./img/agari.eps}
+    \caption{ゲーム終了時のウィンドウ}
+    \label{gameend}
+    \end{figure}
+
+    \begin{figure}[H]
+    \centering
+    \includegraphics[scale=1.0]{./img/game_end.eps}
+    \caption{ゲーム終了時のコンソール}
+    \label{gameendconsole}
+    \end{figure}
+
+    \section{改善点・感想}
+    ホストとクライアントが接続した後にstackdumpすることがあるが開発時間の関係でこのバグを取り切れなかったため改善したい. またlocalhostでは上手く動作したが, 
+    別々の端末でs.exeとc.exeを実行すると強制終了する場合があるためこの問題も改善したい. 4年次のプログラミング演習でOpenGLを使用した桃太郎電鉄風のゲームを作成したが, 
+    複数端末でプレイ出来ないかと考えていたが本課題を通してOpenGLとソケット通信を組み合わせられることが分かったため非常に面白かった. 
 
         \begin{thebibliography}{9}
           \bibitem{nintendo}  Nintendo,花札の歴史・遊び方,\url{hhttps://www.nintendo.co.jp/others/hanafuda_kabufuda/howtoplay/index.html} ,閲覧日2021年7月13日
